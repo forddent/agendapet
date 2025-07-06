@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-br" >
+<head>
+  <meta charset="UTF-8" />
+  <title>AgendePet - Agendamento</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+  />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e3f2e1;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      max-width: 500px;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 20px auto;
+      max-width: 220px;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    }
+    h2 {
+      text-align: center;
+      color: #2e7d32;
+    }
+    label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 12px 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1.5px solid #81c784;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    input:focus, textarea:focus {
+      border-color: #388e3c;
+      outline: none;
+    }
+    button {
+      margin-top: 28px;
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background-color: #43a047;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #357a38;
+    }
+    /* Estilo para datas bloqueadas */
+    .flatpickr-day.flatpickr-disabled {
+      background: #cccccc !important;
+      color: #666666 !important;
+      cursor: not-allowed !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Logo -->
+    <img
+      src="https://cdn-icons-png.flaticon.com/512/616/616408.png"
+      alt="Logo Dr. Gilberto"
+      class="logo"
+    />
+    <h2>Agende uma consulta</h2>
+
+    <label for="tutor">Nome do Tutor:</label>
+    <input type="text" id="tutor" required />
+
+    <label for="pet">Nome do Pet:</label>
+    <input type="text" id="pet" required />
+
+    <label for="telefone">Telefone (WhatsApp):</label>
+    <input type="tel" id="telefone" placeholder="(xx) xxxxx-xxxx" />
+
+    <label for="data">Data da Consulta:</label>
+    <input type="text" id="data" placeholder="Selecione a data" readonly />
+
+    <label for="hora">Horário:</label>
+    <input type="time" id="hora" />
+
+    <label for="motivo">Motivo da Consulta:</label>
+    <textarea id="motivo" rows="3" placeholder="Ex: vacinação, retorno..."></textarea>
+
+    <button onclick="agendarConsulta()">Agendar</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    const numeroWhatsApp = "5574999436711";
+
+    // Carrega agendamentos e bloqueios do localStorage
+    let agendamentos = JSON.parse(localStorage.getItem("agendamentos")) || [];
+    let bloqueiosManuais = JSON.parse(localStorage.getItem("bloqueiosManuais")) || [];
+
+    function getDatasBloqueadas() {
+      const datasAgendadas = agendamentos.map(a => a.data);
+      return [...new Set([...datasAgendadas, ...bloqueiosManuais])];
+    }
+
+    const fpData = flatpickr("#data", {
+      dateFormat: "Y-m-d",
+      minDate: "today",
+      disable: getDatasBloqueadas(),
+      locale: {
+        firstDayOfWeek: 1
+      }
+    });
+
+    function atualizarBloqueios() {
+      const datas = getDatasBloqueadas();
+      fpData.set("disable", datas);
+    }
+
+    function agendarConsulta() {
+      const tutor = document.getElementById("tutor").value.trim();
+      const pet = document.getElementById("pet").value.trim();
+      const telefone = document.getElementById("telefone").value.trim();
+      const data = document.getElementById("data").value;
+      const hora = document.getElementById("hora").value;
+      const motivo = document.getElementById("motivo").value.trim();
+
+      if (!tutor || !pet || !data || !hora) {
+        alert("Por favor, preencha todos os campos obrigatórios.");
+        return;
+      }
+
+      const datasBloqueadas = getDatasBloqueadas();
+      if (datasBloqueadas.includes(data)) {
+        alert("Essa data está bloqueada. Por favor, escolha outra.");
+        return;
+      }
+
+      const agendamento = { tutor, pet, telefone, data, hora, motivo };
+      agendamentos.push(agendamento);
+      localStorage.setItem("agendamentos", JSON.stringify(agendamentos));
+      atualizarBloqueios();
+      fpData.clear();
+
+      const mensagem = `Olá, sou ${tutor} e gostaria de agendar uma consulta com o Dr. Gilberto para meu pet ${pet}.\n\n📅 Data: ${data}\n⏰ Horário: ${hora}\n📱 Contato: ${telefone}\n📝 Motivo: ${motivo}`;
+      const url = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, "_blank");
+
+      document.getElementById("tutor").value = "";
+      document.getElementById("pet").value = "";
+      document.getElementById("telefone").value = "";
+      document.getElementById("data").value = "";
+      document.getElementById("hora").value = "";
+      document.getElementById("motivo").value = "";
+
+      alert("Consulta agendada com sucesso!");
+    }
+
+    atualizarBloqueios();
+  </script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-br" >
+<head>
+  <meta charset="UTF-8" />
+  <title>AgendePet - Área Administrativa</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+  />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f7f0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      max-width: 500px;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    h2 {
+      text-align: center;
+      color: #2e7d32;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+    input {
+      width: 100%;
+      padding: 12px 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1.5px solid #81c784;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      border-color: #388e3c;
+      outline: none;
+    }
+    button {
+      margin-top: 28px;
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background-color: #43a047;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #357a38;
+    }
+    .flatpickr-day.flatpickr-disabled {
+      background: #cccccc !important;
+      color: #666666 !important;
+      cursor: not-allowed !important;
+    }
+    .mensagem {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #c8e6c9;
+      border-left: 5px solid #2e7d32;
+    }
+    #listaBloqueios, #listaAgendamentos {
+      margin-top: 15px;
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #81c784;
+      border-radius: 8px;
+      padding: 10px;
+      background: #f9fff9;
+    }
+    .bloqueio-item, .agendamento-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      background: #dcedc8;
+      border-radius: 6px;
+    }
+    .bloqueio-item button, .agendamento-item button {
+      background-color: #e53935;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      transition: background-color 0.3s;
+    }
+    .bloqueio-item button:hover, .agendamento-item button:hover {
+      background-color: #ab000d;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="admin-container" style="display:none;">
+    <h2>Área Administrativa - Bloqueio de Datas</h2>
+
+    <label for="dataBloqueioManual">Adicionar bloqueio manual (data):</label>
+    <input type="text" id="dataBloqueioManual" placeholder="Selecione a data para bloquear" readonly />
+
+    <button onclick="adicionarBloqueioManual()">Bloquear data</button>
+
+    <h3>Datas Bloqueadas Manualmente:</h3>
+    <div id="listaBloqueios">
+      <!-- Lista de datas bloqueadas vai aparecer aqui -->
+    </div>
+
+    <button style="margin-top: 15px; background-color: #a5d6a7; color: #2e7d32;" onclick="mostrarAgendamentos()">
+      Ver agendamentos
+    </button>
+
+    <div id="listaAgendamentos" style="margin-top:15px;"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+  <script>
+    window.onload = function() {
+      const senha = prompt("Digite a senha para acessar a área administrativa:");
+      if (senha === "d7r9jca") {
+        document.getElementById("admin-container").style.display = "block";
+        iniciar();
+      } else {
+        alert("Senha incorreta! Você será redirecionado.");
+        window.location.href = "index.html";
+      }
+    }
+
+    let bloqueiosManuais = JSON.parse(localStorage.getItem("bloqueiosManuais")) || [];
+    let agendamentos = JSON.parse(localStorage.getItem("agendamentos")) || [];
+
+    const fpBloqueio = flatpickr("#dataBloqueioManual", {
+      dateFormat: "Y-m-d",
+      minDate: "today",
+      locale: "pt"
+    });
+
+    function salvarBloqueios() {
+      localStorage.setItem("bloqueiosManuais", JSON.stringify(bloqueiosManuais));
+      atualizarListaBloqueios();
+    }
+
+    function adicionarBloqueioManual() {
+      const data = document.getElementById("dataBloqueioManual").value;
+      if (!data) {
+        alert("Selecione uma data para bloquear.");
+        return;
+      }
+      if (bloqueiosManuais.includes(data)) {
+        alert("Esta data já está bloqueada.");
+        return;
+      }
+      bloqueiosManuais.push(data);
+      salvarBloqueios();
+      fpBloqueio.clear();
+      alert("Data bloqueada com sucesso!");
+    }
+
+    function atualizarListaBloqueios() {
+      const lista = document.getElementById("listaBloqueios");
+      lista.innerHTML = "";
+      if (bloqueiosManuais.length === 0) {
+        lista.innerHTML = "<p>Não há datas bloqueadas.</p>";
+        return;
+      }
+      bloqueiosManuais.forEach((data, index) => {
+        const div = document.createElement("div");
+        div.className = "bloqueio-item";
+        div.innerHTML = `
+          <span>${data}</span>
+          <button onclick="desbloquearData(${index})">Desbloquear</button>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    function desbloquearData(index) {
+      if (confirm("Deseja realmente desbloquear essa data?")) {
+        bloqueiosManuais.splice(index, 1);
+        salvarBloqueios();
+        alert("Data desbloqueada com sucesso!");
+      }
+    }
+
+    function mostrarAgendamentos() {
+      agendamentos = JSON.parse(localStorage.getItem("agendamentos")) || [];
+      const lista = document.getElementById("listaAgendamentos");
+      lista.innerHTML = "";
+      if (agendamentos.length === 0) {
+        lista.innerHTML = "<p>Não há agendamentos.</p>";
+        return;
+      }
+      const ul = document.createElement("ul");
+      ul.style.paddingLeft = "20px";
+      agendamentos.forEach((a) => {
+        const li = document.createElement("li");
+        li.className = "agendamento-item";
+        li.textContent = `${a.data} ${a.hora} - ${a.tutor} (Pet: ${a.pet}) - Motivo: ${a.motivo}`;
+        ul.appendChild(li);
+      });
+      lista.appendChild(ul);
+    }
+
+    function iniciar() {
+      atualizarListaBloqueios();
+    }
+  </script>
+</body>
+</html>
