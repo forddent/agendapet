@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-br" >
+<head>
+  <meta charset="UTF-8" />
+  <title>AgendePet - Login</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+  />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f7f0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      align-items: center;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      max-width: 400px;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      width: 100%;
+    }
+    h2 {
+      text-align: center;
+      color: #2e7d32;
+      margin-bottom: 30px;
+    }
+    label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+    input {
+      width: 100%;
+      padding: 12px 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1.5px solid #81c784;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+      box-sizing: border-box;
+    }
+    input:focus {
+      border-color: #388e3c;
+      outline: none;
+    }
+    button {
+      margin-top: 28px;
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background-color: #43a047;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #357a38;
+    }
+
+    /* Modal base */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.show {
+      visibility: visible;
+      opacity: 1;
+    }
+    .modal-box {
+      background: white;
+      border-radius: 10px;
+      max-width: 400px;
+      padding: 20px 30px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+    .modal-box p {
+      margin: 20px 0;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .modal-buttons button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-confirm {
+      background-color: #43a047;
+      color: white;
+    }
+    .btn-confirm:hover {
+      background-color: #357a38;
+    }
+    .btn-cancel {
+      background-color: #e53935;
+      color: white;
+    }
+    .btn-cancel:hover {
+      background-color: #ab000d;
+    }
+
+    /* Área administrativa inicialmente oculta */
+    #admin-container {
+      display: none;
+      max-width: 600px;
+    }
+
+    /* Estilo da lista de agendamentos */
+    #listaAgendamentos ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    #listaAgendamentos li {
+      background: #e8f5e9;
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+    }
+    #listaAgendamentos li span {
+      flex: 1 1 60%;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+    #listaAgendamentos li select {
+      flex: 1 1 20%;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1.5px solid #81c784;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+    #listaAgendamentos li button {
+      flex: 1 1 15%;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    #listaAgendamentos li button.btn-cancelar {
+      background-color: #e53935;
+    }
+    #listaAgendamentos li button.btn-cancelar:hover {
+      background-color: #ab000d;
+    }
+    #listaAgendamentos li button.btn-aviso {
+      background-color: #43a047;
+    }
+    #listaAgendamentos li button.btn-aviso:hover {
+      background-color: #357a38;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tela de Login -->
+  <div class="container" id="login-container">
+    <h2>Login - AgendePet</h2>
+    <label for="usuario">Usuário:</label>
+    <input type="text" id="usuario" placeholder="Digite seu usuário" autocomplete="username" />
+    <label for="senha">Senha:</label>
+    <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password" />
+    <button onclick="fazerLogin()">Entrar</button>
+  </div>
+
+  <!-- Área Administrativa -->
+  <div class="container" id="admin-container">
+
+    <h2>Área Administrativa - Bloqueio de Datas</h2>
+
+    <label for="dataBloqueioManual">Adicionar bloqueio manual (data):</label>
+    <input type="text" id="dataBloqueioManual" placeholder="Selecione a data para bloquear" readonly />
+
+    <button onclick="adicionarBloqueioManual()">Bloquear data</button>
+
+    <h3>Datas Bloqueadas Manualmente:</h3>
+    <div id="listaBloqueios">
+      <!-- Lista de datas bloqueadas vai aparecer aqui -->
+    </div>
+
+    <button style="margin-top: 15px; background-color: #a5d6a7; color: #2e7d32;" onclick="mostrarAgendamentos()">
+      Ver agendamentos
+    </button>
+
+    <div id="listaAgendamentos" style="margin-top:15px;"></div>
+  </div>
+
+  <!-- Modal de alerta custom -->
+  <div id="modalAlerta" class="modal-overlay">
+    <div class="modal-box">
+      <p id="modalAlertaMsg">Mensagem do alerta</p>
+      <button class="btn-confirm" onclick="fecharModalAlerta()">OK</button>
+    </div>
+  </div>
+
+  <!-- Modal de confirmação custom -->
+  <div id="modalConfirmacao" class="modal-overlay">
+    <div class="modal-box">
+      <p id="modalConfirmacaoMsg">Mensagem de confirmação</p>
+      <div class="modal-buttons">
+        <button class="btn-confirm" id="btnConfirmarSim">Sim</button>
+        <button class="btn-cancel" id="btnConfirmarNao">Não</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+  <script>
+    // Funções modais personalizadas
+    function mostrarAlerta(msg) {
+      const modal = document.getElementById("modalAlerta");
+      document.getElementById("modalAlertaMsg").textContent = msg;
+      modal.classList.add("show");
+      return new Promise(resolve => {
+        window.fecharModalAlerta = () => {
+          modal.classList.remove("show");
+          resolve();
+        };
+      });
+    }
+
+    function mostrarConfirmacao(msg) {
+      const modal = document.getElementById("modalConfirmacao");
+      const btnSim = document.getElementById("btnConfirmarSim");
+      const btnNao = document.getElementById("btnConfirmarNao");
+      document.getElementById("modalConfirmacaoMsg").textContent = msg;
+      modal.classList.add("show");
+
+      return new Promise(resolve => {
+        function cleanup() {
+          modal.classList.remove("show");
+          btnSim.removeEventListener("click", onSim);
+          btnNao.removeEventListener("click", onNao);
+        }
+        function onSim() {
+          cleanup();
+          resolve(true);
+        }
+        function onNao() {
+          cleanup();
+          resolve(false);
+        }
+        btnSim.addEventListener("click", onSim);
+        btnNao.addEventListener("click", onNao);
+      });
+    }
+
+    // Função para realizar login
+    async function fazerLogin() {
+      const usuarioInput = document.getElementById("usuario").value.trim();
+      const senhaInput = document.getElementById("senha").value.trim();
+
+      const usuarioCorreto = "admin";
+      const senhaCorreta = "d7r9jca";
+
+      if (usuarioInput === usuarioCorreto && senhaInput === senhaCorreta) {
+        // Esconder login e mostrar admin
+        document.getElementById("login-container").style.display = "none";
+        document.getElementById("admin-container").style.display = "block";
+        iniciar();
+      } else {
+        await mostrarAlerta("Usuário ou senha incorretos. Tente novamente.");
+      }
+    }
+
+    let bloqueiosManuais = JSON.parse(localStorage.getItem("bloqueiosManuais")) || [];
+    let agendamentos = JSON.parse(localStorage.getItem("agendamentos")) || [];
+
+    const fpBloqueio = flatpickr("#dataBloqueioManual", {
+      dateFormat: "Y-m-d",
+      minDate: "today",
+      locale: "pt"
+    });
+
+    async function salvarBloqueios() {
+      localStorage.setItem("bloqueiosManuais", JSON.stringify(bloqueiosManuais));
+      atualizarListaBloqueios();
+    }
+
+    async function adicionarBloqueioManual() {
+      const data = document.getElementById("dataBloqueioManual").value;
+      if (!data) {
+        await mostrarAlerta("Selecione uma data para bloquear.");
+        return;
+      }
+      if (bloqueiosManuais.includes(data)) {
+        await mostrarAlerta("Esta data já está bloqueada.");
+        return;
+      }
+      bloqueiosManuais.push(data);
+      await salvarBloqueios();
+      fpBloqueio.clear();
+      await mostrarAlerta("Data bloqueada com sucesso!");
+    }
+
+    function atualizarListaBloqueios() {
+      const lista = document.getElementById("listaBloqueios");
+      lista.innerHTML = "";
+      if (bloqueiosManuais.length === 0) {
+        lista.innerHTML = "<p>Não há datas bloqueadas.</p>";
+        return;
+      }
+      bloqueiosManuais.forEach((data, index) => {
+        const div = document.createElement("div");
+        div.className = "bloqueio-item";
+        div.innerHTML = `
+          <span>${data}</span>
+          <button onclick="desbloquearData(${index})">Desbloquear</button>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    async function desbloquearData(index) {
+      const confirmado = await mostrarConfirmacao("Deseja realmente desbloquear essa data?");
+      if (confirmado) {
+        bloqueiosManuais.splice(index, 1);
+        await salvarBloqueios();
+        await mostrarAlerta("Data desbloqueada com sucesso!");
+      }
+    }
+
+    async function mostrarAgendamentos() {
+      agendamentos = JSON.parse(localStorage.getItem("agendamentos")) || [];
+      const lista = document.getElementById("listaAgendamentos");
+      lista.innerHTML = "";
+      if (agendamentos.length === 0) {
+        lista.innerHTML = "<p>Não há agendamentos.</p>";
+        return;
+      }
+      const ul = document.createElement("ul");
+
+      agendamentos.forEach((a, index) => {
+        const li = document.createElement("li");
+
+        // Span com dados básicos
+        const texto = document.createElement("span");
+        texto.textContent = `${a.data} ${a.hora} - ${a.tutor} (Pet: ${a.pet}) - Motivo: ${a.motivo}`;
+
+        // Select para status pagamento
+        const selectStatus = document.createElement("select");
+        selectStatus.innerHTML = `
+          <option value="Não Pago">Não Pago</option>
+          <option value="Pago">Pago</option>
+        `;
+        selectStatus.value = a.pago || "Não Pago";
+        selectStatus.onchange = () => {
+          agendamentos[index].pago = selectStatus.value;
+          localStorage.setItem("agendamentos", JSON.stringify(agendamentos));
+        };
+
+        // Botão cancelar
+        const btnCancelar = document.createElement("button");
+        btnCancelar.textContent = "Cancelar";
+        btnCancelar.className = "btn-cancelar";
+        btnCancelar.onclick = () => cancelarAgendamento(index);
+
+        // Botão avisar cliente
+        const btnAvisar = document.createElement("button");
+        btnAvisar.textContent = "Avisar Cliente";
+        btnAvisar.className = "btn-aviso";
+        btnAvisar.onclick = () => avisarCliente(index);
+
+        li.appendChild(texto);
+        li.appendChild(selectStatus);
+        li.appendChild(btnCancelar);
+        li.appendChild(btnAvisar);
+
+        ul.appendChild(li);
+      });
+      lista.appendChild(ul);
+    }
+
+    async function cancelarAgendamento(index) {
+      const confirmado = await mostrarConfirmacao("Deseja realmente cancelar este agendamento?");
+      if (!confirmado) return;
+
+      const agendamento = agendamentos[index];
+      agendamentos.splice(index, 1);
+      localStorage.setItem("agendamentos", JSON.stringify(agendamentos));
+      mostrarAgendamentos();
+      await mostrarAlerta("Agendamento cancelado com sucesso!");
+
+      const enviarMsg = await mostrarConfirmacao("Deseja enviar uma mensagem automática pelo WhatsApp para avisar o cliente?");
+      if (enviarMsg) {
+        avisarClientePorWhatsapp(agendamento);
+      }
+    }
+
+    function avisarCliente(index) {
+      const agendamento = agendamentos[index];
+      avisarClientePorWhatsapp(agendamento);
+    }
+
+    function avisarClientePorWhatsapp(agendamento) {
+      if (!agendamento.telefone) {
+        mostrarAlerta("Número de telefone do cliente não está disponível.");
+        return;
+      }
+      const telefone = agendamento.telefone.replace(/\D/g, "");
+      const msg = `Olá ${agendamento.tutor}, seu agendamento para ${agendamento.pet} no dia ${agendamento.data} às ${agendamento.hora} foi cancelado. Caso queira reagendar, entre em contato conosco. Obrigado!`;
+      const url = `https://api.whatsapp.com/send?phone=${telefone}&text=${encodeURIComponent(msg)}`;
+      window.open(url, "_blank");
+    }
+
+    function iniciar() {
+      atualizarListaBloqueios();
+    }
+  </script>
+</body>
+</html>

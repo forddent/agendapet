@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>AgendePet - Agendamento</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f8e9;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      max-width: 500px;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    /* Logo */
+    .logo {
+      width: 300px;
+      height: auto;
+      margin: 0 auto 20px auto;
+      display: block;
+    }
+
+    h2 {
+      color: #388e3c;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #2e7d32;
+      text-align: left;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1.5px solid #81c784;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    /* Estilo para opções desabilitadas do select */
+    select option:disabled {
+      color: #999;
+    }
+
+    button {
+      margin-top: 25px;
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      background-color: #43a047;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #357a38;
+    }
+
+    .flatpickr-day.flatpickr-disabled {
+      background: #ccc !important;
+      color: #666 !important;
+      cursor: not-allowed !important;
+    }
+
+    /* Modal de mensagem */
+    #modalMensagem {
+      display: none;
+      position: fixed;
+      top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #modalMensagem .modal-content {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 10px;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    #modalMensagem p {
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+    }
+
+    #modalMensagem button {
+      padding: 8px 20px;
+      background: #43a047;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Logo -->
+    <img src="logo.png" alt="Logo AgendePet" class="logo" />
+
+    <h2>Agendamentos de Consultas e Procedimentos</h2>
+
+    <label for="tutor">Seu nome:</label>
+    <input type="text" id="tutor" placeholder="Ex: Maria da Silva" />
+
+    <label for="telefone">Telefone:</label>
+    <input
+      type="tel"
+      id="telefone"
+      placeholder="Ex: (99) 99999-9999"
+      maxlength="15"
+      oninput="formatarTelefone(this)"
+    />
+
+    <label for="pet">Nome do Pet:</label>
+    <input type="text" id="pet" placeholder="Ex: Rex" />
+
+    <label for="dataConsulta">Data da consulta:</label>
+    <input type="text" id="dataConsulta" placeholder="Selecione a data" readonly />
+
+    <label for="horaConsulta">Hora da consulta:</label>
+    <select id="horaConsulta">
+      <option value="">Selecione</option>
+      <!-- opções preenchidas via JS -->
+    </select>
+
+    <label for="motivo">Motivo:</label>
+    <input type="text" id="motivo" placeholder="Ex: Vacinação, consulta geral..." />
+
+    <button onclick="agendarConsulta()">Agendar</button>
+  </div>
+
+  <!-- Modal de mensagem -->
+  <div id="modalMensagem">
+    <div class="modal-content">
+      <p id="textoModal"></p>
+      <button onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+  <script>
+    const bloqueiosManuais = JSON.parse(localStorage.getItem("bloqueiosManuais")) || [];
+    let agendamentos = JSON.parse(localStorage.getItem("agendamentos")) || [];
+
+    const horarios = ["08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
+
+    // Inicializa flatpickr, bloqueando só datas manuais
+    flatpickr("#dataConsulta", {
+      dateFormat: "Y-m-d",
+      minDate: "today",
+      locale: "pt",
+      disable: bloqueiosManuais,
+      onChange: function(selectedDates, dateStr) {
+        atualizarHorariosDisponiveis(dateStr);
+      }
+    });
+
+    // Atualiza opções do select de horário com base na data escolhida
+    function atualizarHorariosDisponiveis(dataSelecionada) {
+      const selectHora = document.getElementById("horaConsulta");
+      selectHora.innerHTML = '<option value="">Selecione</option>';
+
+      const horariosOcupados = agendamentos
+        .filter(a => a.data === dataSelecionada)
+        .map(a => a.hora);
+
+      horarios.forEach(hora => {
+        const option = document.createElement("option");
+        option.value = hora;
+        option.textContent = hora;
+        if (horariosOcupados.includes(hora)) {
+          option.disabled = true;
+          option.textContent += " (Indisponível)";
+        }
+        selectHora.appendChild(option);
+      });
+    }
+
+    function mostrarModal(mensagem) {
+      const modal = document.getElementById('modalMensagem');
+      const texto = document.getElementById('textoModal');
+      texto.textContent = mensagem;
+      modal.style.display = 'flex';
+    }
+
+    function fecharModal() {
+      document.getElementById('modalMensagem').style.display = 'none';
+    }
+
+    function formatarTelefone(campo) {
+      let valor = campo.value.replace(/\D/g, "");
+      if (valor.length > 11) valor = valor.slice(0,11);
+      let formatted = "";
+
+      if (valor.length > 0) {
+        formatted += "(";
+      }
+      if (valor.length <= 2) {
+        formatted += valor;
+      } else {
+        formatted += valor.slice(0, 2) + ") ";
+        if (valor.length <= 7) {
+          formatted += valor.slice(2);
+        } else {
+          formatted += valor.slice(2, 7) + "-" + valor.slice(7);
+        }
+      }
+      campo.value = formatted;
+    }
+
+    function agendarConsulta() {
+      const tutor = document.getElementById("tutor").value.trim();
+      const telefone = document.getElementById("telefone").value.trim();
+      const pet = document.getElementById("pet").value.trim();
+      const data = document.getElementById("dataConsulta").value;
+      const hora = document.getElementById("horaConsulta").value;
+      const motivo = document.getElementById("motivo").value.trim();
+
+      if (!tutor) {
+        mostrarModal("Você esqueceu de preencher o seu nome.");
+        return;
+      }
+      if (!telefone) {
+        mostrarModal("Você esqueceu de preencher o telefone.");
+        return;
+      }
+      if (!pet) {
+        mostrarModal("Você esqueceu de preencher o nome do pet.");
+        return;
+      }
+      if (!data) {
+        mostrarModal("Você esqueceu de selecionar a data da consulta.");
+        return;
+      }
+      if (!hora) {
+        mostrarModal("Você esqueceu de selecionar a hora da consulta.");
+        return;
+      }
+      if (!motivo) {
+        mostrarModal("Você esqueceu de preencher o motivo da consulta.");
+        return;
+      }
+
+      const telefoneNumeros = telefone.replace(/\D/g, "");
+      if (!(telefoneNumeros.length === 10 || telefoneNumeros.length === 11)) {
+        mostrarModal("Digite um telefone válido com DDD.");
+        return;
+      }
+
+      // Checa novamente o conflito no momento do agendamento
+      const existe = agendamentos.find(a => a.data === data && a.hora === hora);
+      if (existe) {
+        mostrarModal("Esse horário já está agendado. Escolha outro.");
+        return;
+      }
+
+      agendamentos.push({ tutor, telefone, pet, data, hora, motivo });
+      localStorage.setItem("agendamentos", JSON.stringify(agendamentos));
+
+      // Redireciona para página de agradecimento
+      window.location.href = "obrigado.html";
+    }
+
+    // Se a data já estiver selecionada ao carregar a página, atualize os horários
+    window.addEventListener("load", () => {
+      const dataAtual = document.getElementById("dataConsulta").value;
+      if (dataAtual) {
+        atualizarHorariosDisponiveis(dataAtual);
+      }
+    });
+  </script>
+</body>
+</html>
